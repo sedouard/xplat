@@ -1,4 +1,10 @@
 #modal-properties {
+    width: 800;
+
+    .collection {
+        width: 190px
+    }
+
     nav.props {
         background-color: $secondary-color;
         
@@ -12,6 +18,28 @@
         margin-right: auto;
         td, th {
             padding: 0px 0px;
+        }
+    }
+    
+    .page-list {
+        width: 100px;
+        float: left;
+    }
+    
+    .binary-viewer {
+        float: left;
+
+        textarea {
+            width: 400px;
+            height: 400px;
+            margin-left: 110px;
+        }
+    }
+
+    .pagination {
+        input {
+            width: 100px;
+            float: left;
         }
     }
 }

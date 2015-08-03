@@ -51,6 +51,7 @@ export default DS.Model.extend({
     contentMd5: DS.attr('string'),          // Content MD5
     type: DS.attr('string'),                // Filetype of the blob (example: image/png)
     selected: DS.attr('boolean'),           // Is this blob selected?
+    pageRanges: DS.attr(),                  // Array of {start: , end: } ranges
 
     /**
      * Get a public URL to the blob
@@ -58,31 +59,93 @@ export default DS.Model.extend({
      */
     getLink: function () {
         var self = this;
-        return new Ember.RSVP.Promise(function (resolve) {
-            accountUtil.getActiveAccount(self.store).then(function (account) {
-                var blobService = self.get('azureStorage').createBlobService(account.get('name'), account.get('key'));
-                var startDate = new Date();
-                var expiryDate = new Date(startDate);
+        return accountUtil.getBlobService(self.store, self.get('azureStorage'))
+        .then(blobService => {
+            var startDate = new Date();
+            var expiryDate = new Date(startDate);
 
-                // set the link expiration to 200 minutes in the future.
-                expiryDate.setMinutes(startDate.getMinutes() + 200);
-                startDate.setMinutes(startDate.getMinutes() - 100);
+            // set the link expiration to 200 minutes in the future.
+            expiryDate.setMinutes(startDate.getMinutes() + 200);
+            startDate.setMinutes(startDate.getMinutes() - 100);
 
-                var sharedAccessPolicy = {
-                    AccessPolicy: {
-                        Permissions: self.get('azureStorage').BlobUtilities.SharedAccessPermissions.READ,
-                        Start: startDate,
-                        Expiry: expiryDate
-                    }
-                };
+            var sharedAccessPolicy = {
+                AccessPolicy: {
+                    Permissions: self.get('azureStorage').BlobUtilities.SharedAccessPermissions.READ,
+                    Start: startDate,
+                    Expiry: expiryDate
+                }
+            };
 
-                var token = blobService.generateSharedAccessSignature(self.get('container_id'), self.get('name'), sharedAccessPolicy);
-                // generate a url in which the user can have access to the blob
-                var sasUrl = blobService.getUrl(self.get('container_id'), self.get('name'), token);
+            var token = blobService.generateSharedAccessSignature(self.get('container_id'), self.get('name'), sharedAccessPolicy);
+            // generate a url in which the user can have access to the blob
+            var sasUrl = blobService.getUrl(self.get('container_id'), self.get('name'), token);
 
-                return Ember.run(null, resolve, sasUrl);
-            });
+            return sasUrl;
         });
+    },
+
+    /**
+    * Gets page ranges for a page blob
+    * @return {Promise}
+    **/
+    getPageRanges: function () {
+
+        if (this.get('blobType') !== 'PageBlob') {
+            throw 'Page Ranges only applicable for PageBlobs';
+        }
+
+        var self = this;
+        return accountUtil.getBlobService(self.store, self.get('azureStorage'))
+        .then(blobService => {
+            var listPageRanges = Ember.RSVP.denodeify(blobService.listPageRanges),
+                // minumum range
+                minumumRange = 1000 * 512,
+                length = self.get('size'),
+                startRange = 0,
+                promises = [];
+            console.log('length:');
+            console.log(length);
+            for (let i = 0; i <= length; i += minumumRange) {
+                let interval = minumumRange;
+                if (i + minumumRange > length) {
+                    interval = length - i;
+                }
+                console.log('calling range:');
+                console.log(i + '-' + (i+ interval));
+                promises.push(listPageRanges.call(blobService, 
+                    self.get('container_id'), self.get('name'),
+                    {rangeStart: i, rangeEnd: i + interval}));
+            }
+            return Ember.RSVP.all(promises);
+        })
+        .then(results => {
+            var returnArray = [];
+
+            results.forEach(array => {
+                returnArray.concat(array);
+            });
+
+            return returnArray;
+        });
+    },
+
+    /**
+    * Gets page ranges for a page blob
+    * @return {Promise}
+    **/
+    getPageData: function (rangeStart, rangeEnd) {
+
+        if (this.get('blobType') !== 'PageBlob') {
+            throw 'Page Ranges only applicable for PageBlobs'
+        }
+
+        var self = this;
+        return accountUtil.getBlobService(self.store, self.get('azureStorage'))
+        .then(blobService => {
+            return blobService.createReadStream(self.get('container_id'), self.get('name'),
+                { rangeStart: rangeStart, rangeEnd: rangeEnd });
+        });
+
     },
 
     /**

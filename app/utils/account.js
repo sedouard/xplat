@@ -21,5 +21,12 @@ export default {
                 }
             });
         });
-    }
+    },
+
+    getBlobService: function (store, azureStorageModule) {
+        return this.getActiveAccount(store).then(function (account) {
+            return azureStorageModule.createBlobService(account.get('name'), account.get('key'));  
+        });
+    },
+
 };

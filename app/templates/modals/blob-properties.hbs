@@ -1,59 +1,95 @@
-<div id="modal-properties" class="modal" >
-    {{view 'modal-navbar' modalTitle="Properties"}}
+<div id="modal-properties" class="modal properties-modal" style="width:800px" >
+    {{#if isPageBlob}}
+        {{view 'modal-navbar' modalTitle="Properties" tab1="Properties" tab2="Pages"}}
+    {{else}}
+        {{view 'modal-navbar' modalTitle="Properties" tab1="Properties"}}
+    {{/if}}
+
     <div class="modal-content">
-        <table class="striped properties">
-            <thead>
-                
-            </thead>
-            <tr>
-                <th>Name:</th>
-                <th>{{model.name}}</th>
-            </tr>
-            <tr>
-                <th>Last Modified:</th>
-                <th>{{moment model.lastModified}}</th>
-            </tr>
-            <tr>
-                <td >Size:</td>
-                <td >{{prettySize}} ({{model.size}} bytes)</td>
-            </tr>
-            <tr>
-                <td >Blob Type:</td>
-                <td>{{model.blobType}}</td>
-            </tr>
-            <tr>
-                <td >Lease Status:</td>
-                <td >{{model.leaseStatus}}</td>
-            </tr>
-            <tr>
-                <td >Lease State:</td>
-                <td>{{model.leaseState}}</td>
-            </tr>
-            {{#if model.leaseID}}
+        {{#if showProperties}}
+            <table class="striped properties">
+                <thead>
+                </thead>
+                <tr>
+                    <th>Name:</th>
+                    <th>{{model.name}}</th>
+                </tr>
+                <tr>
+                    <td>Last Modified:</td>
+                    <td>{{moment model.lastModified}}</td>
+                </tr>
+                <tr>
+                    <td >Size:</td>
+                    <td >{{prettySize}} ({{model.size}} bytes)</td>
+                </tr>
+                <tr>
+                    <td >Blob Type:</td>
+                    <td>{{model.blobType}}</td>
+                </tr>
+                <tr>
+                    <td >Lease Status:</td>
+                    <td >{{model.leaseStatus}}</td>
+                </tr>
                 <tr>
                     <td >Lease State:</td>
                     <td>{{model.leaseState}}</td>
                 </tr>
-            {{/if}}
-            {{#if model.etag}}
+                {{#if model.leaseID}}
+                    <tr>
+                        <td >Lease State:</td>
+                        <td>{{model.leaseState}}</td>
+                    </tr>
+                {{/if}}
+                {{#if model.etag}}
+                    <tr>
+                        <td >ETag:</td>
+                        <td>{{model.etag}}</td>
+                    </tr>
+                {{/if}}
                 <tr>
-                    <td >ETag:</td>
-                    <td>{{model.etag}}</td>
+                    <td >Content MD5:</td>
+                    <td>{{input value=model.contentMd5 disabled=isLocked}}</td>
                 </tr>
-            {{/if}}
-            <tr>
-                <td >Content MD5:</td>
-                <td>{{input value=model.contentMd5 disabled=isLocked}}</td>
-            </tr>
-            <tr>
-                <td >Content Language:</td>
-                <td>{{input value=model.contentLanguage disabled=isLocked}}</td>
-            </tr>
-            <tr>
-                <td >Content Disposition:</td>
-                <td>{{input value=model.contentDisposition disabled=isLocked}}</td>
-            </tr>
-        </table>
+                <tr>
+                    <td >Content Language:</td>
+                    <td>{{input value=model.contentLanguage disabled=isLocked}}</td>
+                </tr>
+                <tr>
+                    <td >Content Disposition:</td>
+                    <td>{{input value=model.contentDisposition disabled=isLocked}}</td>
+                </tr>
+            </table>
+        {{else}}
+            <div class="row">
+                <div class="col s6 offset-s5">
+                    <ul class="pagination">
+                        <li class="disabled">
+                            <a href="#!">
+                                <i class="mdi-navigation-chevron-left"></i>
+                            </a>
+                        </li>
+                        {{input value=selectedPage}}
+                        <li class="disabled">
+                            <a href="#!">
+                                <i class="mdi-navigation-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="row">
+                <div class="page-list col s3">
+                    <div class="collection">
+                        {{#each r in ranges}}
+                        <a {{action "selectPage" r.start}}class="collection-item">{{r.start}}-{{r.end}}</a>
+                        {{/each}}
+                    </div>
+                </div>
+                <div class="binary-viewer col s9">
+                    <textarea id="textarea1" value={{pageData}}></textarea>
+                </div>
+            </div>
+        {{/if}}
     </div>
     <div class="modal-footer">
         <a {{action "discardUnsavedChanges"}} class=" modal-action modal-close waves-effect waves-green btn-flat">Close</a>

@@ -20,6 +20,24 @@ export default Ember.Controller.extend({
     isLocked: function () {
         return this.get('model.leaseState') !== 'available' || this.get('model.leaseStatus') === 'locked';
     }.property('model.leaseState', 'model.leaseStatus'),
+    
+    isPageBlob: Ember.computed.match('model.blobType', /PageBlob/),
+
+    showProperties: true,
+
+    ranges: function () {
+        var res = this.get('model').getPageRanges()
+        .then(ranges => {
+            console.log(ranges);
+        })
+        .catch(err => {
+            console.log(err);
+        });
+    }.property(),
+
+    selectedPage: '',
+
+    pageData: '',
 
     actions: {
         /**
@@ -43,6 +61,40 @@ export default Ember.Controller.extend({
          */
         discardUnsavedChanges: function () {
             this.get('model').rollback();
+        },
+        
+        actionProperties: function () {
+            this.get('showProperties') ? this.set('showProperties', false) : this.set('showProperties', true);
+        },
+        
+        actionPages: function () {
+            this.get('showProperties') ? this.set('showProperties', false) : this.set('showProperties', true);
+        },
+
+        selectPage: function (page) {
+            this.set('selectedPage', page);
+            this.set('pageData', '');
+            var self = this;
+            console.log
+            this.get('model').getPageData(page, page + 511)
+            .then(readStream => {
+                readStream.on('data', nativeBuffer => {
+                    console.log(nativeBuffer);
+                    for (let i in nativeBuffer) {
+                        if (i % 1 !== 0) {
+                            continue;
+                        }
+                        let pageData = this.get('pageData'),
+                            hex = nativeBuffer[i].toString(16);
+                        hex.length < 2 ? hex = '0'+hex : hex = hex;
+                        this.set('pageData', pageData + hex + ' ');
+                    }
+                });
+            })
+            .catch(err => {
+                console.log('err!');
+                console.log(err);
+            })
         }
     }
 });
