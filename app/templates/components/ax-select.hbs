@@ -1,5 +1,5 @@
 <select class="browser-default" disabled={{disabled}} {{action 'change' on='change'}}>
-    {{#each content key="@index" as |item|}}
+    {{#each displayContent key="@index" as |item|}}
         <option value="{{item}}" selected={{is-equal item selectedValue}}>
             {{item}}
         </option>

@@ -37,7 +37,8 @@
                     </div>
                 {{else if editUi}}
                     <div class="col s11">
-                        {{view "select" value=selectedEditAccount content=model optionValuePath="content.id" optionLabelPath="content.name"}}
+                        {{ax-select value=selectedEditAccount content=model optionValuePath="name"
+                        label="Saved Accounts"}}
                     </div>
                     <div class="col s1 edit">
                         <i {{action "delete"}} class="fa fa-trash-o"></i>
